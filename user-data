@@ -6,8 +6,6 @@ coreos:
       peer-addr: $public_ipv4:7001
   fleet:
       public-ip: $public_ipv4
-  flannel:
-    interface: $public_ipv4
   units:
     - name: etcd.service
       command: start
@@ -27,10 +25,38 @@ coreos:
 
         [Install]
         WantedBy=sockets.target
-    - name: flanneld.service
-      drop-ins:
-        - name: 50-network-config.conf
-          content: |
-            [Service]
-            ExecStartPre=/usr/bin/etcdctl set /coreos.com/network/config '{"Network":"10.20.0.0/16","SubnetLen":24,"SubnetMin":"10.20.10.0","SubnetMax":"10.20.50.0"}'
+    - name: flannel-0.service
       command: start
+      content: |
+        [Unit]
+        After=network-online.target
+        Wants=network-online.target
+        Description=flannel is an etcd backed overlay network for containers
+        [Service]
+        Type=notify
+        ExecStartPre=-/usr/bin/mkdir -p /opt/bin
+        ExecStartPre=/usr/bin/wget -N -P /opt/bin http://storage.googleapis.com/flannel/flanneld
+        ExecStartPre=/usr/bin/chmod +x /opt/bin/flanneld
+        ExecStartPre=-/usr/bin/mkdir -p /run/flannel-0
+        ExecStartPre=/usr/bin/etcdctl set /coreos.com/flannel-0/config '{"Network":"10.20.0.0/16","SubnetLen":24,"SubnetMin":"10.20.0.0","SubnetMax":"10.20.0.0","Backend":{"Type":"udp","Port":7890}}'
+        ExecStartPre=/usr/bin/etcdctl set /coreos.com/networks/10.20.0.0-24 0
+        ExecStart=/opt/bin/flanneld --etcd-endpoint http://127.0.0.1:4001 --etcd-prefix /coreos.com/flannel-0 --subnet-file /run/flannel-0/subnet.env
+        ExecStartPost=/usr/sbin/brctl addbr bridge0
+        ExecStartPost=/usr/bin/ip link set bridge0 up
+        ExecStartPost=/usr/bin/ip addr add 10.20.0.1/24 brd + dev bridge0
+    - name: flannel-1.service
+      command: start
+      content: |
+        [Unit]
+        After=flannel-0.service
+        Wants=network-online.target
+        Description=flannel is an etcd backed overlay network for containers
+        [Service]
+        Type=notify
+        ExecStartPre=-/usr/bin/mkdir -p /run/flannel-1
+        ExecStartPre=/usr/bin/etcdctl set /coreos.com/flannel-1/config '{"Network":"10.20.0.0/16","SubnetLen":24,"SubnetMin":"10.20.1.0","SubnetMax":"10.20.1.0","Backend":{"Type":"udp","Port":7891}}'
+        ExecStartPre=/usr/bin/etcdctl set /coreos.com/networks/10.20.1.0-24 1
+        ExecStart=/opt/bin/flanneld --etcd-endpoint http://127.0.0.1:4001 --etcd-prefix /coreos.com/flannel-1 --subnet-file /run/flannel-1/subnet.env
+        ExecStartPost=/usr/sbin/brctl addbr bridge1
+        ExecStartPost=/usr/bin/ip link set bridge1 up
+        ExecStartPost=/usr/bin/ip addr add 10.20.1.1/24 brd + dev bridge1
