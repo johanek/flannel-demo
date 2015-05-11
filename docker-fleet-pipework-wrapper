@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ux
+set -u
 
 OPTION=$1;shift
 IP=$1;shift
