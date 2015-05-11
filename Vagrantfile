@@ -62,6 +62,8 @@ Vagrant.configure("2") do |config|
     # in CoreOS, so tell Vagrant that so it can be smarter.
     v.check_guest_additions = false
     v.functional_vboxsf     = false
+    # Allow promiscuous mode on NIC
+    v.customize ['modifyvm', :id, '--nicpromisc1', 'allow-all']
   end
 
   # plugin conflict
