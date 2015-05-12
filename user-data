@@ -38,7 +38,7 @@ coreos:
         ExecStartPre=/usr/bin/cp /home/core/share/flanneld /opt/bin
         ExecStartPre=/usr/bin/chmod +x /opt/bin/flanneld
         ExecStartPre=-/usr/bin/mkdir -p /run/flannel-0
-        ExecStartPre=/usr/bin/etcdctl set /coreos.com/flannel-0/config '{"Network":"10.20.0.0/16","SubnetLen":24,"SubnetMin":"10.20.0.0","SubnetMax":"10.20.0.0","Backend":{"Type":"udp","Port":7890}}'
+        ExecStartPre=/usr/bin/etcdctl set /coreos.com/flannel-0/config '{"Network":"10.20.0.0/24","SubnetLen":24,"SubnetMin":"10.20.0.0","SubnetMax":"10.20.0.0","Backend":{"Type":"udp","Port":7890}}'
         ExecStartPre=/usr/bin/etcdctl set /coreos.com/networks/10.20.0.0-24 0
         ExecStart=/opt/bin/flanneld --etcd-endpoints http://127.0.0.1:4001 --etcd-prefix /coreos.com/flannel-0 --subnet-file /run/flannel-0/subnet.env
     - name: flannel-1.service
@@ -51,6 +51,6 @@ coreos:
         [Service]
         Type=notify
         ExecStartPre=-/usr/bin/mkdir -p /run/flannel-1
-        ExecStartPre=/usr/bin/etcdctl set /coreos.com/flannel-1/config '{"Network":"10.20.0.0/16","SubnetLen":24,"SubnetMin":"10.20.1.0","SubnetMax":"10.20.1.0","Backend":{"Type":"udp","Port":7891}}'
+        ExecStartPre=/usr/bin/etcdctl set /coreos.com/flannel-1/config '{"Network":"10.20.1.0/24","SubnetLen":24,"SubnetMin":"10.20.1.0","SubnetMax":"10.20.1.0","Backend":{"Type":"udp","Port":7891}}'
         ExecStartPre=/usr/bin/etcdctl set /coreos.com/networks/10.20.1.0-24 1
         ExecStart=/opt/bin/flanneld --etcd-endpoints http://127.0.0.1:4001 --etcd-prefix /coreos.com/flannel-1 --subnet-file /run/flannel-1/subnet.env
