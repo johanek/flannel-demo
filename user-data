@@ -35,7 +35,7 @@ coreos:
         [Service]
         Type=notify
         ExecStartPre=-/usr/bin/mkdir -p /opt/bin
-        ExecStartPre=/usr/bin/wget -N -P /opt/bin http://storage.googleapis.com/flannel/flanneld
+        ExecStartPre=/usr/bin/cp /home/core/share/flanneld /opt/bin
         ExecStartPre=/usr/bin/chmod +x /opt/bin/flanneld
         ExecStartPre=-/usr/bin/mkdir -p /run/flannel-0
         ExecStartPre=/usr/bin/etcdctl set /coreos.com/flannel-0/config '{"Network":"10.20.0.0/16","SubnetLen":24,"SubnetMin":"10.20.0.0","SubnetMax":"10.20.0.0","Backend":{"Type":"udp","Port":7890}}'
