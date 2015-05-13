@@ -1,56 +1,38 @@
 #cloud-config
 
+---
 coreos:
   etcd:
-      addr: $public_ipv4:4001
-      peer-addr: $public_ipv4:7001
+    addr: $public_ipv4:4001
+    peer-addr: $public_ipv4:7001
+    discovery: https://discovery.etcd.io/ca2e1d67b0d2aa3e7423650914b92ebb
   fleet:
-      public-ip: $public_ipv4
+    public-ip: $public_ipv4
+  flannel:
+    interface: $public_ipv4
   units:
-    - name: etcd.service
-      command: start
-    - name: fleet.service
-      command: start
-    - name: docker-tcp.socket
-      command: start
-      enable: true
-      content: |
-        [Unit]
-        Description=Docker Socket for the API
+  - name: etcd.service
+    command: start
+  - name: fleet.service
+    command: start
+  - name: docker-tcp.socket
+    command: start
+    enable: true
+    content: |
+      [Unit]
+      Description=Docker Socket for the API
 
-        [Socket]
-        ListenStream=2375
-        BindIPv6Only=both
-        Service=docker.service
+      [Socket]
+      ListenStream=2375
+      BindIPv6Only=both
+      Service=docker.service
 
-        [Install]
-        WantedBy=sockets.target
-    - name: flannel-0.service
-      command: start
+      [Install]
+      WantedBy=sockets.target
+  - name: flanneld.service
+    drop-ins:
+    - name: 50-network-config.conf
       content: |
-        [Unit]
-        After=network-online.target
-        Wants=network-online.target
-        Description=flannel is an etcd backed overlay network for containers
         [Service]
-        Type=notify
-        ExecStartPre=-/usr/bin/mkdir -p /opt/bin
-        ExecStartPre=/usr/bin/cp /home/core/share/flanneld /opt/bin
-        ExecStartPre=/usr/bin/chmod +x /opt/bin/flanneld
-        ExecStartPre=-/usr/bin/mkdir -p /run/flannel-0
-        ExecStartPre=/usr/bin/etcdctl set /coreos.com/flannel-0/config '{"Network":"10.20.0.0/24","SubnetLen":24,"SubnetMin":"10.20.0.0","SubnetMax":"10.20.0.0","Backend":{"Type":"udp","Port":7890}}'
-        ExecStartPre=/usr/bin/etcdctl set /coreos.com/networks/10.20.0.0-24 0
-        ExecStart=/opt/bin/flanneld --etcd-endpoints http://127.0.0.1:4001 --etcd-prefix /coreos.com/flannel-0 --subnet-file /run/flannel-0/subnet.env
-    - name: flannel-1.service
-      command: start
-      content: |
-        [Unit]
-        After=flannel-0.service
-        Wants=network-online.target
-        Description=flannel is an etcd backed overlay network for containers
-        [Service]
-        Type=notify
-        ExecStartPre=-/usr/bin/mkdir -p /run/flannel-1
-        ExecStartPre=/usr/bin/etcdctl set /coreos.com/flannel-1/config '{"Network":"10.20.1.0/24","SubnetLen":24,"SubnetMin":"10.20.1.0","SubnetMax":"10.20.1.0","Backend":{"Type":"udp","Port":7891}}'
-        ExecStartPre=/usr/bin/etcdctl set /coreos.com/networks/10.20.1.0-24 1
-        ExecStart=/opt/bin/flanneld --etcd-endpoints http://127.0.0.1:4001 --etcd-prefix /coreos.com/flannel-1 --subnet-file /run/flannel-1/subnet.env
+        ExecStartPre=/usr/bin/etcdctl set /coreos.com/network/config '{"Network":"10.20.0.0/16","SubnetLen":24,"SubnetMin":"10.20.10.0","SubnetMax":"10.20.50.0"}'
+    command: start
