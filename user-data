@@ -34,5 +34,5 @@ coreos:
     - name: 50-network-config.conf
       content: |
         [Service]
-        ExecStartPre=/usr/bin/etcdctl set /coreos.com/network/config '{"Network":"10.20.0.0/16","SubnetLen":24,"SubnetMin":"10.20.10.0","SubnetMax":"10.20.50.0"}'
+        ExecStartPre=/usr/bin/etcdctl set /coreos.com/network/config '{"Network":"10.20.0.0/16","SubnetLen":24,"SubnetMin":"10.20.1.0","SubnetMax":"10.20.254.0"}'
     command: start
