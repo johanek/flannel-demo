@@ -57,6 +57,22 @@ function nextbridge {
   echo $(expr $CURRENT + 1)
 }
 
+function valid_ip {
+  local  ip=$1
+  local  stat=1
+
+  if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+      OIFS=$IFS
+      IFS='.'
+      ip=($ip)
+      IFS=$OIFS
+      [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
+          && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
+      stat=$?
+  fi
+  return $stat
+}
+
 function usage {
   echo "Usage: $0 run [IP] [DOCKER OPTIONS]"
   exit 1
@@ -69,10 +85,24 @@ case $OPTION in
     SUBNET=$(echo $IP | sed 's/\(.*\..*\..*\)\..*/\1.0/')
     GATEWAY=$(echo $SUBNET | sed 's/\.0$/\.1/')
 
+    # Check IP Address is valid
+    valid_ip $IP
+    if [ $? -ne 0 ]; then
+      echo "IP address $IP is not valid"
+      usage
+    fi
+
+    # Check IP address within 10.20.0.0/16 CIDR range
+    # Very lame/simple
+    IFS=. read -r i1 i2 i3 i4 <<< "$IP"
+    if [ $i1 -ne 10 ] || [ $i2 -ne 20 ]; then
+      echo "IP address $IP not in 10.20.0.0/16 range"
+      usage
+    fi
+
     # Check IP Address is available
     ping -c 1 -w 1 $IP >& /dev/null
-    RESULT=$?
-    if [ "$RESULT" -ne 1 ]; then 
+    if [ $? -ne 1 ]; then
       echo "IP address $IP already in use"
       usage
     fi
