@@ -44,6 +44,7 @@ function getbridge {
     # Subnet available, create the bridge and set the subnet key in etcd
     BRIDGE="bridge$(nextbridge)"
     echo "Creating new bridge $BRIDGE for $SUBNET"
+    set -e
     sudo brctl addbr $BRIDGE
     sudo ip link set $BRIDGE up
     sudo ip link set dev $BRIDGE mtu 1472
